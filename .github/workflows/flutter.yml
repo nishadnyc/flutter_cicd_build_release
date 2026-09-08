@@ -1,0 +1,46 @@
+name: Flutter Build APK
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository code
+      - uses: actions/checkout@v5
+
+      # 2. Set up Java (Required by Android Gradle compiler tools)
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      # 3. Set up the Flutter environment on GitHub's cloud infrastructure
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      # 4. Resolve package dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. Compile the standalone release APK
+      - name: Build production APK
+        run: flutter build apk --release
+
+      # 6. Generate a GitHub Release and attach the raw unzipped APK file
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release Build v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Automatically provided by GitHub
